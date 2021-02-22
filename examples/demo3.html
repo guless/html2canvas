@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+<html>
+  <head>
+    <title>
+      display/box/float/clear test
+    </title>
+  </head>
+  <body>
+    <div id="content" style="padding:8px;background:#f1f1f1;margin-bottom:8px;">
+        <input type="text" class="item-3" value="Sativa 🐱Stevie’s" style="font-size:32px; text-shadow: 2px 2px 0 blue" oninput="render()">
+        <input type="text" class="item-4" value="Sativa 🐱Stevie’s" style="
+            font-size:32px;
+            background: linear-gradient(green, yellow);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;" oninput="render()">
+    </div>
+    <script type="text/javascript" src="../dist/html2canvas.js"></script>
+    <script type="text/javascript">
+        let lastCanvas;
+        function render() {
+            html2canvas(document.getElementById("content")).then(function(canvas) {
+                if (lastCanvas) {
+                    document.body.removeChild(lastCanvas);
+                    lastCanvas = null;
+                }
+                lastCanvas = canvas;
+                document.body.appendChild(canvas);
+            });
+        }
+        render();
+    </script>
+  </body>
+</html>

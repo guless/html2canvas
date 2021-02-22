@@ -396,7 +396,29 @@ export class CanvasRenderer {
             ]);
 
             this.ctx.clip();
-            this.renderTextWithLetterSpacing(new TextBounds(container.value, textBounds), styles.letterSpacing);
+            const text = new TextBounds(container.value, textBounds);
+            const textShadows: TextShadow = styles.textShadow;
+
+            this.renderTextWithLetterSpacing(text, styles.letterSpacing);
+
+            if (textShadows.length && text.text.trim().length) {
+                textShadows
+                    .slice(0)
+                    .reverse()
+                    .forEach(textShadow => {
+                        this.ctx.shadowColor = asString(textShadow.color);
+                        this.ctx.shadowOffsetX = textShadow.offsetX.number * this.options.scale;
+                        this.ctx.shadowOffsetY = textShadow.offsetY.number * this.options.scale;
+                        this.ctx.shadowBlur = textShadow.blur.number;
+
+                        this.ctx.fillText(text.text, text.bounds.left, text.bounds.top + text.bounds.height);
+                    });
+
+                this.ctx.shadowColor = '';
+                this.ctx.shadowOffsetX = 0;
+                this.ctx.shadowOffsetY = 0;
+                this.ctx.shadowBlur = 0;
+            }
             this.ctx.restore();
             this.ctx.textBaseline = 'bottom';
             this.ctx.textAlign = 'left';
