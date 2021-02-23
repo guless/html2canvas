@@ -686,9 +686,7 @@ export class CanvasRenderer {
             if (backgroundClip === BACKGROUND_CLIP.TEXT) {
                 this.ctx.globalCompositeOperation = 'destination-out';
                 await this.renderNodeContent(paint, true);
-                this.ctx.globalCompositeOperation = 'destination-atop';
-            } else {
-                this.ctx.globalCompositeOperation = 'source-over';
+                this.ctx.globalCompositeOperation = 'destination-over';
             }
 
             if (!isTransparent(styles.backgroundColor)) {
