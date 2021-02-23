@@ -264,7 +264,9 @@ export class CanvasRenderer {
     }
 
     async renderNodeContent(paint: ElementPaint, textclip: boolean = false) {
-        this.applyEffects(paint.effects, EffectTarget.CONTENT);
+        if (!textclip) {
+            this.applyEffects(paint.effects, EffectTarget.CONTENT);
+        }
         const container = paint.container;
         const curves = paint.curves;
         const styles = container.styles;
