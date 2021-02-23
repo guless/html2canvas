@@ -172,13 +172,13 @@ export class CanvasRenderer {
         ];
     }
 
-    async renderTextNode(text: TextContainer, styles: CSSParsedDeclaration) {
+    async renderTextNode(text: TextContainer, styles: CSSParsedDeclaration, textclip: boolean = false) {
         const [font, fontFamily, fontSize] = this.createFontStyle(styles);
 
         this.ctx.font = font;
 
         text.textBounds.forEach(text => {
-            this.ctx.fillStyle = asString(styles.color);
+            this.ctx.fillStyle = textclip ? '#000' : asString(styles.color);
             this.renderTextWithLetterSpacing(text, styles.letterSpacing);
             const textShadows: TextShadow = styles.textShadow;
 
@@ -263,13 +263,13 @@ export class CanvasRenderer {
         }
     }
 
-    async renderNodeContent(paint: ElementPaint) {
+    async renderNodeContent(paint: ElementPaint, textclip: boolean = false) {
         this.applyEffects(paint.effects, EffectTarget.CONTENT);
         const container = paint.container;
         const curves = paint.curves;
         const styles = container.styles;
         for (const child of container.textNodes) {
-            await this.renderTextNode(child, styles);
+            await this.renderTextNode(child, styles, textclip);
         }
 
         if (container instanceof ImageElementContainer) {
@@ -367,7 +367,7 @@ export class CanvasRenderer {
 
         if (isTextInputElement(container) && container.value.length) {
             [this.ctx.font] = this.createFontStyle(styles);
-            this.ctx.fillStyle = asString(styles.color);
+            this.ctx.fillStyle = textclip ? '#000' : asString(styles.color);
 
             this.ctx.textBaseline = 'middle';
             this.ctx.textAlign = canvasTextAlign(container.styles.textAlign);
@@ -401,7 +401,7 @@ export class CanvasRenderer {
 
             this.renderTextWithLetterSpacing(text, styles.letterSpacing);
 
-            if (textShadows.length && text.text.trim().length) {
+            if (!textclip && textShadows.length && text.text.trim().length) {
                 textShadows
                     .slice(0)
                     .reverse()
@@ -439,7 +439,7 @@ export class CanvasRenderer {
                 }
             } else if (paint.listValue && container.styles.listStyleType !== LIST_STYLE_TYPE.NONE) {
                 [this.ctx.font] = this.createFontStyle(styles);
-                this.ctx.fillStyle = asString(styles.color);
+                this.ctx.fillStyle = textclip ? '#000' : asString(styles.color);
 
                 this.ctx.textBaseline = 'middle';
                 this.ctx.textAlign = 'right';
@@ -670,8 +670,9 @@ export class CanvasRenderer {
             {style: styles.borderLeftStyle, color: styles.borderLeftColor}
         ];
 
+        const backgroundClip = getBackgroundValueForIndex(styles.backgroundClip, 0);
         const backgroundPaintingArea = calculateBackgroundCurvedPaintingArea(
-            getBackgroundValueForIndex(styles.backgroundClip, 0),
+            backgroundClip,
             paint.curves
         );
 
@@ -680,6 +681,14 @@ export class CanvasRenderer {
             this.path(backgroundPaintingArea);
             this.ctx.clip();
 
+            if (backgroundClip === BACKGROUND_CLIP.TEXT) {
+                this.ctx.globalCompositeOperation = 'destination-out';
+                await this.renderNodeContent(paint, true);
+                this.ctx.globalCompositeOperation = 'destination-atop';
+            } else {
+                this.ctx.globalCompositeOperation = 'source-over';
+            }
+
             if (!isTransparent(styles.backgroundColor)) {
                 this.ctx.fillStyle = asString(styles.backgroundColor);
                 this.ctx.fill();
@@ -687,6 +696,7 @@ export class CanvasRenderer {
 
             await this.renderBackgroundImage(paint.container);
 
+            this.ctx.globalCompositeOperation = 'source-over';
             this.ctx.restore();
 
             styles.boxShadow
